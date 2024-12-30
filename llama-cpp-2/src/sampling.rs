@@ -286,71 +286,48 @@ impl LlamaSampler {
     /// Penalizes tokens for being present in the context.
     ///
     /// Parameters:  
-    /// - ``n_vocab``: [`LlamaModel::n_vocab`]
-    /// - ``special_eos)id``: [`LlamaModel::token_eos`]
-    /// - ``linefeed_id``: [`LlamaModel::token_nl`]
     /// - ``penalty_last_n``: last n tokens to penalize (0 = disable penalty, -1 = context size)
     /// - ``penalty_repeat``: 1.0 = disabled
     /// - ``penalty_freq``: 0.0 = disabled
     /// - ``penalty_present``: 0.0 = disabled
-    /// - ``penalize_nl``: consider newlines as a repeatable token
-    /// - ``ignore_eos``: ignore the end-of-sequence token
     #[allow(clippy::too_many_arguments)]
     #[must_use]
     pub fn penalties(
-        n_vocab: i32,
-        special_eos_id: i32,
-        linefeed_id: i32,
         penalty_last_n: i32,
         penalty_repeat: f32,
         penalty_freq: f32,
         penalty_present: f32,
-        penalize_nl: bool,
-        ignore_eos: bool,
     ) -> Self {
         let sampler = unsafe {
             llama_cpp_sys_2::llama_sampler_init_penalties(
-                n_vocab,
-                special_eos_id,
-                linefeed_id,
                 penalty_last_n,
                 penalty_repeat,
                 penalty_freq,
                 penalty_present,
-                penalize_nl,
-                ignore_eos,
             )
         };
         Self { sampler }
     }
 
     /// Same as [`Self::penalties`], but with `n_vocab`, `special_eos_id`, and `linefeed_id`
-    /// initialized from `model`, `penalize_nl = false`, and `ignore_eos = true`.
     ///
     /// Parameters:  
-    /// - ``model``: The model's tokenizer to use to initialize the sampler.
     /// - ``penalty_last_n``: last n tokens to penalize (0 = disable penalty, -1 = context size)
     /// - ``penalty_repeat``: 1.0 = disabled
     /// - ``penalty_freq``: 0.0 = disabled
     /// - ``penalty_present``: 0.0 = disabled
     #[must_use]
     pub fn penalties_simple(
-        model: &LlamaModel,
         penalty_last_n: i32,
         penalty_repeat: f32,
         penalty_freq: f32,
         penalty_present: f32,
     ) -> Self {
         Self::penalties(
-            model.n_vocab(),
-            model.token_eos().0,
-            model.token_nl().0,
             penalty_last_n,
             penalty_repeat,
             penalty_freq,
             penalty_present,
-            false,
-            true,
         )
     }
 
