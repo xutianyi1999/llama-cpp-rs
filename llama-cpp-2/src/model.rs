@@ -81,6 +81,14 @@ impl LlamaModel {
         unsafe { llama_cpp_sys_2::llama_model_get_vocab(self.model.as_ptr()) }
     }
 
+    pub fn as_ptr(&self) -> *const llama_cpp_sys_2::llama_model {
+        self.model.as_ptr()
+    }
+
+    pub fn as_mut_ptr(&mut self) -> *mut llama_cpp_sys_2::llama_model {
+        self.model.as_ptr()
+    }
+
     /// get the number of tokens the model was trained on
     ///
     /// # Panics

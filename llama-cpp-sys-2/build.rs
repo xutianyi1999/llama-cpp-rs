@@ -156,7 +156,7 @@ fn main() {
     let llama_dst = out_dir.join("llama.cpp");
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("Failed to get CARGO_MANIFEST_DIR");
     let llama_src = Path::new(&manifest_dir).join("llama.cpp");
-    let build_shared_libs = cfg!(feature = "cuda") || cfg!(feature = "dynamic-link");
+    let build_shared_libs = cfg!(feature = "dynamic-link");
 
     let build_shared_libs = std::env::var("LLAMA_BUILD_SHARED_LIBS")
         .map(|v| v == "1")
@@ -189,6 +189,7 @@ fn main() {
     // Bindings
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
+        .header("llama-cpp-hibiki/llama_cpp_hibiki.h")
         .clang_arg(format!("-I{}", llama_dst.join("include").display()))
         .clang_arg(format!("-I{}", llama_dst.join("ggml/include").display()))
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
@@ -197,6 +198,7 @@ fn main() {
         .allowlist_type("ggml_.*")
         .allowlist_function("llama_.*")
         .allowlist_type("llama_.*")
+        .allowlist_function("hibiki_.*")
         .prepend_enum_name(false)
         .generate()
         .expect("Failed to generate bindings");
@@ -209,6 +211,7 @@ fn main() {
 
     println!("cargo:rerun-if-changed=wrapper.h");
     println!("cargo:rerun-if-changed=./sherpa-onnx");
+    println!("cargo:rerun-if-changed=llama-cpp-hibiki/llama_cpp_hibiki.h");
 
     debug_log!("Bindings Created");
 
@@ -293,6 +296,10 @@ fn main() {
 
     if cfg!(feature = "cuda") {
         config.define("GGML_CUDA", "ON");
+
+        if let Ok(v) = env::var("LLAMA_CPP_CUDA_ARCHITECTURES") {
+            config.define("CMAKE_CUDA_ARCHITECTURES", v);
+        }
     }
 
     // Android doesn't have OpenMP support AFAICT and openmp is a default feature. Do this here
@@ -366,6 +373,32 @@ fn main() {
         }
     }
 
+    // link cuda libs
+    // https://github.com/ggerganov/llama.cpp/blob/8d59d911711b8f1ba9ec57c4b192ccd2628af033/ggml/src/ggml-cuda/CMakeLists.txt#L80-L95
+    // https://github.com/ggerganov/llama.cpp/blob/8d59d911711b8f1ba9ec57c4b192ccd2628af033/Makefile#L609-L622
+    if cfg!(feature = "cuda") && !build_shared_libs {
+        let cuda_path = std::env::var("CUDA_PATH").expect("Please set CUDA_PATH env variable");
+        let cuda_path = PathBuf::from(cuda_path);
+        let libs = ["lib/x64", "lib64", "lib64/stubs"];
+
+        for lib in libs {
+            println!("cargo:rustc-link-search={}", cuda_path.join(lib).display());
+        }
+
+        println!("cargo:rustc-link-lib=dylib=cuda");
+
+        if cfg!(windows) {
+            println!("cargo:rustc-link-lib=static=cudart_static");
+            println!("cargo:rustc-link-lib=dylib=cublas");
+            println!("cargo:rustc-link-lib=dylib=cublasLt");
+        } else {
+            println!("cargo:rustc-link-lib=static=cudart_static");
+            println!("cargo:rustc-link-lib=static=cublas_static");
+            println!("cargo:rustc-link-lib=static=cublasLt_static");
+            println!("cargo:rustc-link-lib=static=culibos");
+        }
+    }
+
     // copy DLLs to target
     if build_shared_libs {
         let libs_assets = extract_lib_assets(&out_dir);
@@ -396,4 +429,17 @@ fn main() {
             }
         }
     }
+
+    cc::Build::new()
+        .cpp(true)
+        .include("llama.cpp/include")
+        .include("llama.cpp/ggml/include")
+        .include("llama.cpp/common")
+        // .file("llama.cpp/common/build-info.cpp")
+        .file("llama.cpp/common/common.cpp")
+        .file("llama.cpp/common/log.cpp")
+        .file("llama.cpp/common/sampling.cpp")
+        .file("llama.cpp/common/speculative.cpp")
+        .file("llama-cpp-hibiki/llama_cpp_hibiki.cpp")
+        .compile("llama_cpp_hibiki");
 }
