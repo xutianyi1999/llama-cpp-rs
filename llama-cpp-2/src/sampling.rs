@@ -14,6 +14,10 @@ pub struct LlamaSampler {
     pub(crate) sampler: *mut llama_cpp_sys_2::llama_sampler,
 }
 
+unsafe impl Send for LlamaSampler {}
+
+unsafe impl Sync for LlamaSampler {}
+
 impl Debug for LlamaSampler {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LlamaSamplerChain").finish()
@@ -281,7 +285,7 @@ impl LlamaSampler {
 
     /// Penalizes tokens for being present in the context.
     ///
-    /// Parameters:  
+    /// Parameters:
     /// - ``penalty_last_n``: last n tokens to penalize (0 = disable penalty, -1 = context size)
     /// - ``penalty_repeat``: 1.0 = disabled
     /// - ``penalty_freq``: 0.0 = disabled

@@ -11,7 +11,7 @@ pub mod kv_overrides;
 /// A safe wrapper around `llama_model_params`.
 #[allow(clippy::module_name_repetitions)]
 pub struct LlamaModelParams {
-    pub(crate) params: llama_cpp_sys_2::llama_model_params,
+    pub params: llama_cpp_sys_2::llama_model_params,
     kv_overrides: Vec<llama_cpp_sys_2::llama_model_kv_override>,
 }
 
