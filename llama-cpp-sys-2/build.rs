@@ -235,6 +235,7 @@ fn main() {
     // Bindings
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
+        .header("llama-cpp-hibiki/llama_cpp_hibiki.h")
         .clang_arg(format!("-I{}", llama_src.join("include").display()))
         .clang_arg(format!("-I{}", llama_src.join("ggml/include").display()))
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
@@ -243,6 +244,7 @@ fn main() {
         .allowlist_type("ggml_.*")
         .allowlist_function("llama_.*")
         .allowlist_type("llama_.*")
+        .allowlist_function("hibiki_.*")
         .prepend_enum_name(false)
         .generate()
         .expect("Failed to generate bindings");
@@ -254,12 +256,15 @@ fn main() {
         .expect("Failed to write bindings");
 
     println!("cargo:rerun-if-changed=wrapper.h");
+    println!("cargo:rerun-if-changed=llama-cpp-hibiki/llama_cpp_hibiki.h");
 
     debug_log!("Bindings Created");
 
     // Build with Cmake
 
     let mut config = Config::new(&llama_src);
+
+    config.define("GGML_SCHED_MAX_BACKENDS", "128");
 
     // Would require extra source files to pointlessly
     // be included in what's uploaded to and downloaded from
@@ -356,6 +361,14 @@ fn main() {
         if cfg!(feature = "cuda-no-vmm") {
             config.define("GGML_CUDA_NO_VMM", "ON");
         }
+
+        if let Ok(v) = env::var("LLAMA_CPP_CUDA_ARCHITECTURES") {
+            config.define("CMAKE_CUDA_ARCHITECTURES", v);
+        }
+
+        if let Ok(v) = env::var("LLAMA_CPP_GGML_RPC") {
+            config.define("GGML_RPC", v);
+        }
     }
 
     // Android doesn't have OpenMP support AFAICT and openmp is a default feature. Do this here
@@ -410,14 +423,13 @@ fn main() {
         } else {
             println!("cargo:rustc-link-lib=static=cublas_static");
             println!("cargo:rustc-link-lib=static=cublasLt_static");
+            println!("cargo:rustc-link-lib=static=culibos");
         }
 
         // Need to link against libcuda.so unless GGML_CUDA_NO_VMM is defined.
         if !cfg!(feature = "cuda-no-vmm") {
             println!("cargo:rustc-link-lib=cuda");
         }
-
-        println!("cargo:rustc-link-lib=static=culibos");
     }
 
     // Link libraries
@@ -499,4 +511,21 @@ fn main() {
             }
         }
     }
+
+    cc::Build::new()
+        .cpp(true)
+        .std("c++17")
+        .include("llama.cpp/include")
+        .include("llama.cpp/ggml/include")
+        .include("llama.cpp/common")
+        // .file("llama.cpp/common/build-info.cpp")
+        .file("llama.cpp/common/common.cpp")
+        .file("llama.cpp/common/chat.cpp")
+        .file("llama.cpp/common/json-schema-to-grammar.cpp")
+        .file("llama.cpp/common/log.cpp")
+        .file("llama.cpp/common/sampling.cpp")
+        .file("llama.cpp/common/speculative.cpp")
+        .file("llama.cpp/common/ngram-cache.cpp")
+        .file("llama-cpp-hibiki/llama_cpp_hibiki.cpp")
+        .compile("llama_cpp_hibiki");
 }
