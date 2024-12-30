@@ -235,6 +235,7 @@ fn main() {
     // Bindings
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
+        .header("llama-cpp-hibiki/llama_cpp_hibiki.h")
         .clang_arg(format!("-I{}", llama_src.join("include").display()))
         .clang_arg(format!("-I{}", llama_src.join("ggml/include").display()))
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
@@ -243,6 +244,7 @@ fn main() {
         .allowlist_type("ggml_.*")
         .allowlist_function("llama_.*")
         .allowlist_type("llama_.*")
+        .allowlist_function("hibiki_.*")
         .prepend_enum_name(false)
         .generate()
         .expect("Failed to generate bindings");
@@ -254,12 +256,15 @@ fn main() {
         .expect("Failed to write bindings");
 
     println!("cargo:rerun-if-changed=wrapper.h");
+    println!("cargo:rerun-if-changed=llama-cpp-hibiki/llama_cpp_hibiki.h");
 
     debug_log!("Bindings Created");
 
     // Build with Cmake
 
     let mut config = Config::new(&llama_src);
+
+    config.define("GGML_SCHED_MAX_BACKENDS", "128");
 
     // Would require extra source files to pointlessly
     // be included in what's uploaded to and downloaded from
@@ -355,6 +360,14 @@ fn main() {
 
         if cfg!(feature = "cuda-no-vmm") {
             config.define("GGML_CUDA_NO_VMM", "ON");
+        }
+
+        if let Ok(v) = env::var("LLAMA_CPP_CUDA_ARCHITECTURES") {
+            config.define("CMAKE_CUDA_ARCHITECTURES", v);
+        }
+
+        if let Ok(v) = env::var("LLAMA_CPP_GGML_RPC") {
+            config.define("GGML_RPC", v);
         }
     }
 
@@ -469,6 +482,32 @@ fn main() {
         _ => (),
     }
 
+    // link cuda libs
+    // https://github.com/ggerganov/llama.cpp/blob/8d59d911711b8f1ba9ec57c4b192ccd2628af033/ggml/src/ggml-cuda/CMakeLists.txt#L80-L95
+    // https://github.com/ggerganov/llama.cpp/blob/8d59d911711b8f1ba9ec57c4b192ccd2628af033/Makefile#L609-L622
+    if cfg!(feature = "cuda") && !build_shared_libs {
+        let cuda_path = std::env::var("CUDA_PATH").expect("Please set CUDA_PATH env variable");
+        let cuda_path = PathBuf::from(cuda_path);
+        let libs = ["lib/x64", "lib64", "lib64/stubs"];
+
+        for lib in libs {
+            println!("cargo:rustc-link-search={}", cuda_path.join(lib).display());
+        }
+
+        println!("cargo:rustc-link-lib=dylib=cuda");
+
+        if cfg!(windows) {
+            println!("cargo:rustc-link-lib=static=cudart_static");
+            println!("cargo:rustc-link-lib=dylib=cublas");
+            println!("cargo:rustc-link-lib=dylib=cublasLt");
+        } else {
+            println!("cargo:rustc-link-lib=static=cudart_static");
+            println!("cargo:rustc-link-lib=static=cublas_static");
+            println!("cargo:rustc-link-lib=static=cublasLt_static");
+            println!("cargo:rustc-link-lib=static=culibos");
+        }
+    }
+
     // copy DLLs to target
     if build_shared_libs {
         let libs_assets = extract_lib_assets(&out_dir);
@@ -499,4 +538,21 @@ fn main() {
             }
         }
     }
+
+    cc::Build::new()
+        .cpp(true)
+        .std("c++17")
+        .include("llama.cpp/include")
+        .include("llama.cpp/ggml/include")
+        .include("llama.cpp/common")
+        // .file("llama.cpp/common/build-info.cpp")
+        .file("llama.cpp/common/common.cpp")
+        .file("llama.cpp/common/chat.cpp")
+        .file("llama.cpp/common/json-schema-to-grammar.cpp")
+        .file("llama.cpp/common/log.cpp")
+        .file("llama.cpp/common/sampling.cpp")
+        .file("llama.cpp/common/speculative.cpp")
+        .file("llama.cpp/common/ngram-cache.cpp")
+        .file("llama-cpp-hibiki/llama_cpp_hibiki.cpp")
+        .compile("llama_cpp_hibiki");
 }
