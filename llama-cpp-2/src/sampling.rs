@@ -14,6 +14,10 @@ pub struct LlamaSampler {
     pub(crate) sampler: *mut llama_cpp_sys_2::llama_sampler,
 }
 
+unsafe impl Send for LlamaSampler {}
+
+unsafe impl Sync for LlamaSampler {}
+
 impl Debug for LlamaSampler {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LlamaSamplerChain").finish()
