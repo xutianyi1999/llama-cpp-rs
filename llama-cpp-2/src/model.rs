@@ -1,5 +1,5 @@
 //! A safe wrapper around `llama_model`.
-use std::ffi::CString;
+use std::ffi::{c_void, CString};
 use std::num::NonZeroU16;
 use std::os::raw::c_int;
 use std::path::Path;
@@ -74,6 +74,14 @@ unsafe impl Send for LlamaModel {}
 unsafe impl Sync for LlamaModel {}
 
 impl LlamaModel {
+    pub fn as_ptr(&self) -> *const llama_cpp_sys_2::llama_model {
+        self.model.as_ptr()
+    }
+
+    pub fn as_mut_ptr(&mut self) -> *mut llama_cpp_sys_2::llama_model {
+        self.model.as_ptr()
+    }
+
     /// get the number of tokens the model was trained on
     ///
     /// # Panics
