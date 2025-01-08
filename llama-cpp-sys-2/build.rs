@@ -151,7 +151,7 @@ fn main() {
     let llama_dst = out_dir.join("llama.cpp");
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("Failed to get CARGO_MANIFEST_DIR");
     let llama_src = Path::new(&manifest_dir).join("llama.cpp");
-    let build_shared_libs = cfg!(feature = "cuda") || cfg!(feature = "dynamic-link");
+    let build_shared_libs = cfg!(feature = "dynamic-link");
 
     let build_shared_libs = std::env::var("LLAMA_BUILD_SHARED_LIBS")
         .map(|v| v == "1")
@@ -338,6 +338,30 @@ fn main() {
         if let Some(path) = macos_link_search_path() {
             println!("cargo:rustc-link-lib=clang_rt.osx");
             println!("cargo:rustc-link-search={}", path);
+        }
+    }
+
+    // link cuda libs
+    // https://github.com/ggerganov/llama.cpp/blob/8d59d911711b8f1ba9ec57c4b192ccd2628af033/ggml/src/ggml-cuda/CMakeLists.txt#L80-L95
+    if cfg!(feature = "cuda") && !build_shared_libs {
+        let cuda_path = std::env::var("CUDA_PATH").expect("Please set CUDA_PATH env variable");
+        let cuda_path = PathBuf::from(cuda_path);
+        let libs = ["lib/x64", "lib64", "lib64/stubs"];
+
+        for lib in libs {
+            println!("cargo:rustc-link-search={}", cuda_path.join(lib).display());
+        }
+
+        println!("cargo:rustc-link-lib=dylib=cuda");
+
+        if cfg!(windows) {
+            println!("cargo:rustc-link-lib=static=cudart_static");
+            println!("cargo:rustc-link-lib=dylib=cublas");
+            println!("cargo:rustc-link-lib=dylib=cublasLt");
+        } else {
+            println!("cargo:rustc-link-lib=static=cudart_static");
+            println!("cargo:rustc-link-lib=static=cublas_static");
+            println!("cargo:rustc-link-lib=static=cublasLt_static");
         }
     }
 
