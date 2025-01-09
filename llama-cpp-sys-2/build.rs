@@ -343,6 +343,7 @@ fn main() {
 
     // link cuda libs
     // https://github.com/ggerganov/llama.cpp/blob/8d59d911711b8f1ba9ec57c4b192ccd2628af033/ggml/src/ggml-cuda/CMakeLists.txt#L80-L95
+    // https://github.com/ggerganov/llama.cpp/blob/8d59d911711b8f1ba9ec57c4b192ccd2628af033/Makefile#L609-L622
     if cfg!(feature = "cuda") && !build_shared_libs {
         let cuda_path = std::env::var("CUDA_PATH").expect("Please set CUDA_PATH env variable");
         let cuda_path = PathBuf::from(cuda_path);
@@ -362,6 +363,7 @@ fn main() {
             println!("cargo:rustc-link-lib=static=cudart_static");
             println!("cargo:rustc-link-lib=static=cublas_static");
             println!("cargo:rustc-link-lib=static=cublasLt_static");
+            println!("cargo:rustc-link-lib=static=culibos");
         }
     }
 
