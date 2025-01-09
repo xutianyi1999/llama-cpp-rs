@@ -266,6 +266,10 @@ fn main() {
 
     if cfg!(feature = "cuda") {
         config.define("GGML_CUDA", "ON");
+
+        if let Ok(v) = env::var("LLAMA_CPP_CUDA_ARCHITECTURES") {
+            config.define("CMAKE_CUDA_ARCHITECTURES", v);
+        }
     }
 
     if cfg!(feature = "openmp") {
