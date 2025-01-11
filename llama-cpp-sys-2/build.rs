@@ -184,6 +184,7 @@ fn main() {
     // Bindings
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
+        .header("llama-cpp-hibiki/llama_cpp_hibiki.h")
         .clang_arg(format!("-I{}", llama_dst.join("include").display()))
         .clang_arg(format!("-I{}", llama_dst.join("ggml/include").display()))
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
@@ -192,6 +193,7 @@ fn main() {
         .allowlist_type("ggml_.*")
         .allowlist_function("llama_.*")
         .allowlist_type("llama_.*")
+        .allowlist_function("hibiki_.*")
         .prepend_enum_name(false)
         .generate()
         .expect("Failed to generate bindings");
@@ -204,6 +206,7 @@ fn main() {
 
     println!("cargo:rerun-if-changed=wrapper.h");
     println!("cargo:rerun-if-changed=./sherpa-onnx");
+    println!("cargo:rerun-if-changed=llama-cpp-hibiki/llama_cpp_hibiki.h");
 
     debug_log!("Bindings Created");
 
@@ -401,4 +404,16 @@ fn main() {
             }
         }
     }
+
+    cc::Build::new()
+        .cpp(true)
+        .include("llama.cpp/include")
+        .include("llama.cpp/ggml/include")
+        .include("llama.cpp/common")
+        .file("llama.cpp/common/build-info.cpp")
+        .file("llama.cpp/common/common.cpp")
+        .file("llama.cpp/common/log.cpp")
+        .file("llama.cpp/common/sampling.cpp")
+        .file("llama-cpp-hibiki/llama_cpp_hibiki.cpp")
+        .compile("llama_cpp_hibiki");
 }
