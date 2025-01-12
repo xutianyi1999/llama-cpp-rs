@@ -15,6 +15,16 @@ struct HibikiCommonParamsSampling * hibiki_common_params_sampling_init();
 
 void hibiki_common_params_sampling_free(struct HibikiCommonParamsSampling * params);
 
+void hibiki_common_params_sampling_set_frequency_penalty(struct HibikiCommonParamsSampling * params, float frequency_penalty);
+
+void hibiki_common_params_sampling_set_presence_penalty(struct HibikiCommonParamsSampling * params, float presence_penalty);
+
+void hibiki_common_params_sampling_set_seed(struct HibikiCommonParamsSampling * params, int32_t seed);
+
+void hibiki_common_params_sampling_set_temperature(struct HibikiCommonParamsSampling * params, float temperature);
+
+void hibiki_common_params_sampling_set_top_p(struct HibikiCommonParamsSampling * params, float top_p);
+
 struct HibikiCommonSampler * hibiki_common_sampler_init(const struct llama_model * model, const struct HibikiCommonParamsSampling * common_params);
 
 void hibiki_common_sampler_free(struct HibikiCommonSampler * common_sampler);

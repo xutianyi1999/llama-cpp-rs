@@ -42,3 +42,29 @@ llama_token hibiki_common_sampler_sample(HibikiCommonSampler *gsmpl, llama_conte
     common_sampler * common_sampler = reinterpret_cast<struct common_sampler*>(gsmpl);
     return common_sampler_sample(common_sampler, ctx, idx, grammar_first);
 }
+
+void hibiki_common_params_sampling_set_frequency_penalty(struct HibikiCommonParamsSampling *params,
+                                                         float frequency_penalty) {
+    common_params_sampling * p = reinterpret_cast<common_params_sampling*>(params);
+    p->penalty_freq = frequency_penalty;
+}
+
+void hibiki_common_params_sampling_set_presence_penalty(struct HibikiCommonParamsSampling *params, float presence_penalty) {
+    common_params_sampling * p = reinterpret_cast<common_params_sampling*>(params);
+    p->penalty_present = presence_penalty;
+}
+
+void hibiki_common_params_sampling_set_seed(struct HibikiCommonParamsSampling *params, int32_t seed) {
+    common_params_sampling * p = reinterpret_cast<common_params_sampling*>(params);
+    p->seed = seed;
+}
+
+void hibiki_common_params_sampling_set_temperature(struct HibikiCommonParamsSampling *params, float temperature) {
+    common_params_sampling * p = reinterpret_cast<common_params_sampling*>(params);
+    p->temp = temperature;
+}
+
+void hibiki_common_params_sampling_set_top_p(struct HibikiCommonParamsSampling *params, float top_p) {
+    common_params_sampling * p = reinterpret_cast<common_params_sampling*>(params);
+    p->top_p = top_p;
+}
