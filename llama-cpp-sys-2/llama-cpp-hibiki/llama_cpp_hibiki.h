@@ -3,6 +3,12 @@
 
 #include "llama.h"
 
+// llama.cpp/common/build-info.cpp
+int LLAMA_BUILD_NUMBER = 0;
+char const *LLAMA_COMMIT = "";
+char const *LLAMA_COMPILER = "";
+char const *LLAMA_BUILD_TARGET = "";
+
 #ifdef __cplusplus
 extern "C" {
 #endif

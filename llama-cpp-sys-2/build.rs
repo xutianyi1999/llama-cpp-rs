@@ -410,7 +410,7 @@ fn main() {
         .include("llama.cpp/include")
         .include("llama.cpp/ggml/include")
         .include("llama.cpp/common")
-        .file("llama.cpp/common/build-info.cpp")
+        // .file("llama.cpp/common/build-info.cpp")
         .file("llama.cpp/common/common.cpp")
         .file("llama.cpp/common/log.cpp")
         .file("llama.cpp/common/sampling.cpp")
