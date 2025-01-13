@@ -42,6 +42,9 @@ void hibiki_common_sampler_reset(struct HibikiCommonSampler * gsmpl);
 struct HibikiCommonSampler * hibiki_common_sampler_clone(struct HibikiCommonSampler * gsmpl);
 
 llama_token hibiki_common_sampler_sample(struct HibikiCommonSampler * gsmpl, struct llama_context * ctx, int idx, bool grammar_first);
+
+bool hibiki_common_speculative_are_compatible( const struct llama_context * ctx_tgt, const struct llama_context * ctx_dft);
+
 #ifdef __cplusplus
 }
 #endif

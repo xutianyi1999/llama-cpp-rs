@@ -1,5 +1,6 @@
 #include "llama_cpp_hibiki.h"
 #include "sampling.h"
+#include "speculative.h"
 
 HibikiCommonParamsSampling * hibiki_common_params_sampling_init() {
     common_params_sampling * params_sampling = new common_params_sampling;
@@ -67,4 +68,9 @@ void hibiki_common_params_sampling_set_temperature(struct HibikiCommonParamsSamp
 void hibiki_common_params_sampling_set_top_p(struct HibikiCommonParamsSampling *params, float top_p) {
     common_params_sampling * p = reinterpret_cast<common_params_sampling*>(params);
     p->top_p = top_p;
+}
+
+bool hibiki_common_speculative_are_compatible(const struct llama_context *ctx_tgt,
+    const struct llama_context *ctx_dft) {
+    return common_speculative_are_compatible(ctx_tgt, ctx_dft);
 }
