@@ -242,7 +242,7 @@ impl LlamaSampler {
 
         let sampler = unsafe {
             llama_cpp_sys_2::llama_sampler_init_grammar(
-                model.model.as_ptr(),
+                model.vocab,
                 grammar_str.as_ptr(),
                 grammar_root.as_ptr(),
             )
@@ -275,7 +275,8 @@ impl LlamaSampler {
 
         let sampler = unsafe {
             llama_cpp_sys_2::llama_sampler_init_dry(
-                model.model.as_ptr(),
+                model.vocab,
+                model.n_ctx_train() as i32,
                 multiplier,
                 base,
                 allowed_length,
