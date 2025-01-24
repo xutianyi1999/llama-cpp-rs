@@ -31,6 +31,8 @@ void hibiki_common_params_sampling_set_temperature(struct HibikiCommonParamsSamp
 
 void hibiki_common_params_sampling_set_top_p(struct HibikiCommonParamsSampling * params, float top_p);
 
+llama_token_data_array * hibiki_common_sampler_get_candidates(HibikiCommonSampler *gsmpl);
+
 struct HibikiCommonSampler * hibiki_common_sampler_init(const struct llama_model * model, const struct HibikiCommonParamsSampling * common_params);
 
 void hibiki_common_sampler_free(struct HibikiCommonSampler * common_sampler);
@@ -44,6 +46,33 @@ struct HibikiCommonSampler * hibiki_common_sampler_clone(struct HibikiCommonSamp
 llama_token hibiki_common_sampler_sample(struct HibikiCommonSampler * gsmpl, struct llama_context * ctx, int idx, bool grammar_first);
 
 bool hibiki_common_speculative_are_compatible( const struct llama_context * ctx_tgt, const struct llama_context * ctx_dft);
+
+struct HibikiCommonNgramCache;
+
+void hibiki_common_ngram_cache_update(
+    struct HibikiCommonNgramCache* ngram_cache,
+    int ngram_min,
+    int ngram_max,
+    const llama_token * inp_data,
+    int inp_data_len,
+    int nnew,
+    bool print_progress
+);
+
+void hibiki_common_ngram_cache_draft(
+    const llama_token * inp_data,
+    int inp_data_len,
+    const llama_token * draft,
+    int draft_len,
+    int n_draft,
+    int ngram_min,
+    int ngram_max,
+    struct HibikiCommonNgramCache* nc_context,
+    struct HibikiCommonNgramCache* nc_dynamic,
+    struct HibikiCommonNgramCache* nc_static
+);
+
+void hibiki_common_ngram_cache_save(const struct HibikiCommonNgramCache* ngram_cache, const char *filename);
 
 #ifdef __cplusplus
 }
