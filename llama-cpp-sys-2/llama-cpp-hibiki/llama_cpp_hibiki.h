@@ -31,7 +31,7 @@ void hibiki_common_params_sampling_set_temperature(struct HibikiCommonParamsSamp
 
 void hibiki_common_params_sampling_set_top_p(struct HibikiCommonParamsSampling * params, float top_p);
 
-llama_token_data_array * hibiki_common_sampler_get_candidates(HibikiCommonSampler *gsmpl);
+llama_token_data_array * hibiki_common_sampler_get_candidates(struct HibikiCommonSampler *gsmpl);
 
 struct HibikiCommonSampler * hibiki_common_sampler_init(const struct llama_model * model, const struct HibikiCommonParamsSampling * common_params);
 

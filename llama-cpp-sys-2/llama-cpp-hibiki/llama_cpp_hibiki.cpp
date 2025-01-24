@@ -70,7 +70,7 @@ void hibiki_common_params_sampling_set_top_p(struct HibikiCommonParamsSampling *
     p->top_p = top_p;
 }
 
-llama_token_data_array * hibiki_common_sampler_get_candidates(HibikiCommonSampler *gsmpl) {
+llama_token_data_array * hibiki_common_sampler_get_candidates(struct HibikiCommonSampler *gsmpl) {
     common_sampler * common_sampler = reinterpret_cast<struct common_sampler*>(gsmpl);
     return common_sampler_get_candidates(common_sampler);
 }
