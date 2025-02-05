@@ -432,6 +432,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
+        .std("c++17")
         .include("llama.cpp/include")
         .include("llama.cpp/ggml/include")
         .include("llama.cpp/common")
