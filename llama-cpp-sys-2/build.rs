@@ -438,6 +438,8 @@ fn main() {
         .include("llama.cpp/common")
         // .file("llama.cpp/common/build-info.cpp")
         .file("llama.cpp/common/common.cpp")
+        .file("llama.cpp/common/chat.cpp")
+        .file("llama.cpp/common/json-schema-to-grammar.cpp")
         .file("llama.cpp/common/log.cpp")
         .file("llama.cpp/common/sampling.cpp")
         .file("llama.cpp/common/speculative.cpp")
