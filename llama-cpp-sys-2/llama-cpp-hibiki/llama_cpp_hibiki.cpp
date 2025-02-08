@@ -131,6 +131,9 @@ void hibiki_common_chat_templates_free(struct HibikiCommonChatTemplates *p) {
 
 struct HibikiCommonChatParams * hibiki_body_to_chat_params(const struct HibikiCommonChatTemplates *hibiki_tmpls, const char *json_str) {
     const struct common_chat_templates *tmpls = reinterpret_cast<const struct common_chat_templates*>(hibiki_tmpls);
+    if (tmpls->template_tool_use == nullptr) {
+        throw std::runtime_error("template_tool_use is nullptr!");
+    }
     const auto & tmpl = *tmpls->template_tool_use;
     json body = json::parse(json_str);
 
