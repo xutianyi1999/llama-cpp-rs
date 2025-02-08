@@ -74,6 +74,26 @@ void hibiki_common_ngram_cache_draft(
 
 void hibiki_common_ngram_cache_save(const struct HibikiCommonNgramCache* ngram_cache, const char *filename);
 
+struct HibikiCommonChatTemplates;
+struct HibikiCommonChatParams;
+
+struct HibikiCommonChatTemplates* hibiki_common_chat_templates_from_model(const struct llama_model * model, const char *template_name);
+
+void hibiki_common_chat_templates_free(struct HibikiCommonChatTemplates * p);
+
+struct HibikiCommonChatParams * hibiki_body_to_chat_params(const struct HibikiCommonChatTemplates *tmpl, const char * body);
+
+void hibiki_common_chat_params_free(struct HibikiCommonChatParams * p);
+
+// exclude \0
+size_t hibiki_get_common_chat_params_prompt_length(struct HibikiCommonChatParams *params);
+
+void hibiki_get_common_chat_params_prompt(const struct HibikiCommonChatParams * params, char * prompt);
+
+int hibiki_get_common_chat_params_format(const struct HibikiCommonChatParams * params);
+
+void hibiki_common_chat_parse(const char * input, int format_intput, char * out_json);
+
 #ifdef __cplusplus
 }
 #endif
