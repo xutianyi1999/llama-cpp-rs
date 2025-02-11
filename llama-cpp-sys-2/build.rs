@@ -304,6 +304,10 @@ fn main() {
         if let Ok(v) = env::var("LLAMA_CPP_CUDA_ARCHITECTURES") {
             config.define("CMAKE_CUDA_ARCHITECTURES", v);
         }
+
+        if let Ok(v) = env::var("LLAMA_CPP_GGML_RPC") {
+            config.define("GGML_RPC", v);
+        }
     }
 
     // Android doesn't have OpenMP support AFAICT and openmp is a default feature. Do this here
