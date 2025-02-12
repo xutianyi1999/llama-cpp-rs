@@ -223,7 +223,7 @@ fn main() {
 
     let mut config = Config::new(&llama_src);
 
-    config.define("GGML_SCHED_MAX_BACKENDS", Some("128"));
+    config.define("GGML_SCHED_MAX_BACKENDS", "128");
 
     // Would require extra source files to pointlessly
     // be included in what's uploaded to and downloaded from
