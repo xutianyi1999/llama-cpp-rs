@@ -441,6 +441,7 @@ fn main() {
     cc::Build::new()
         .cpp(true)
         .std("c++17")
+        .define("GGML_SCHED_MAX_BACKENDS", 128)
         .include("llama.cpp/include")
         .include("llama.cpp/ggml/include")
         .include("llama.cpp/common")
