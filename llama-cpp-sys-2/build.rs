@@ -453,6 +453,7 @@ fn main() {
         .file("llama.cpp/common/log.cpp")
         .file("llama.cpp/common/sampling.cpp")
         .file("llama.cpp/common/speculative.cpp")
+        .file("llama.cpp/common/ngram-cache.cpp")
         .file("llama-cpp-hibiki/llama_cpp_hibiki.cpp")
         .compile("llama_cpp_hibiki");
 }
