@@ -74,6 +74,10 @@ void hibiki_common_ngram_cache_draft(
 
 void hibiki_common_ngram_cache_save(const struct HibikiCommonNgramCache* ngram_cache, const char *filename);
 
+struct HibikiCommonNgramCache* hibiki_common_ngram_cache_load(const char *filename);
+
+void hibiki_common_ngram_cache_free(struct HibikiCommonNgramCache* nc);
+
 struct HibikiCommonChatTemplates;
 struct HibikiCommonChatParams;
 
