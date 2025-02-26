@@ -167,6 +167,13 @@ struct HibikiCommonChatTemplates * hibiki_common_chat_templates_from_model(const
     return reinterpret_cast<struct HibikiCommonChatTemplates *>(p);
 }
 
+struct HibikiCommonNgramCache * hibiki_common_ngram_cache_new() {
+    common_ngram_cache cache;
+    common_ngram_cache *p = new common_ngram_cache(cache);
+
+    return reinterpret_cast<struct HibikiCommonNgramCache *>(p);
+}
+
 void hibiki_common_chat_templates_free(struct HibikiCommonChatTemplates *p) {
     struct common_chat_templates *t = reinterpret_cast<struct common_chat_templates*>(p);
     delete t;
