@@ -242,9 +242,8 @@ impl LlamaSampler {
     /// ```
     #[must_use]
     pub fn top_n_sigma(n: f32) -> Self {
-        todo!()
-        // let sampler = unsafe { llama_cpp_sys_2::llama_sampler_init_top_n_sigma(n) };
-        // Self { sampler }
+        let sampler = unsafe { llama_cpp_sys_2::llama_sampler_init_top_n_sigma(n) };
+        Self { sampler }
     }
 
     /// Locally Typical Sampling implementation described in the paper <https://arxiv.org/abs/2202.00666>.
