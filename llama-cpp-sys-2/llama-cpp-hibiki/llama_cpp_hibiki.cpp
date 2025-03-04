@@ -101,11 +101,11 @@ bool hibiki_common_speculative_are_compatible(const struct llama_context *ctx_tg
 
 void hibiki_common_ngram_cache_update(struct HibikiCommonNgramCache *ngram_cache, int ngram_min, int ngram_max,
     const llama_token *inp_data, int inp_data_len, int nnew, bool print_progress) {
-    common_ngram_cache & cache = reinterpret_cast<common_ngram_cache&>(ngram_cache);
+    common_ngram_cache * cache = reinterpret_cast<common_ngram_cache *>(ngram_cache);
     std::vector<llama_token> vec_data(inp_data, inp_data + inp_data_len);
 
     common_ngram_cache_update(
-        cache,
+        *cache,
         ngram_min,
         ngram_max,
         vec_data,
@@ -114,15 +114,15 @@ void hibiki_common_ngram_cache_update(struct HibikiCommonNgramCache *ngram_cache
     );
 }
 
-void hibiki_common_ngram_cache_draft(const llama_token *inp_data, int inp_data_len, const llama_token *draft_data,
-    int draft_len, int n_draft, int ngram_min, int ngram_max, struct HibikiCommonNgramCache *nc_context,
+void hibiki_common_ngram_cache_draft(const llama_token *inp_data, int inp_data_len, llama_token *out,
+    int * draft_len, int n_draft, int ngram_min, int ngram_max, struct HibikiCommonNgramCache *nc_context,
     struct HibikiCommonNgramCache *nc_dynamic, struct HibikiCommonNgramCache *nc_static) {
     std::vector<llama_token> inp(inp_data, inp_data + inp_data_len);
-    std::vector<llama_token> draft(draft_data, draft_data + draft_len);
+    std::vector<llama_token> draft = { out[0] };
 
-    common_ngram_cache & context = reinterpret_cast<common_ngram_cache&>(nc_context);
-    common_ngram_cache & dynamic = reinterpret_cast<common_ngram_cache&>(nc_dynamic);
-    common_ngram_cache & static_ = reinterpret_cast<common_ngram_cache&>(nc_static);
+    common_ngram_cache * context = reinterpret_cast<common_ngram_cache *>(nc_context);
+    common_ngram_cache * dynamic = reinterpret_cast<common_ngram_cache *>(nc_dynamic);
+    common_ngram_cache * static_ = reinterpret_cast<common_ngram_cache *>(nc_static);
 
     common_ngram_cache_draft(
         inp,
@@ -130,16 +130,19 @@ void hibiki_common_ngram_cache_draft(const llama_token *inp_data, int inp_data_l
         n_draft,
         ngram_min,
         ngram_max,
-        context,
-        dynamic,
-        static_
+        *context,
+        *dynamic,
+        *static_
     );
+
+    std::memcpy(out, draft.data(), draft.size() * sizeof(llama_token));
+    *draft_len = draft.size();
 }
 
-void hibiki_common_ngram_cache_save(const struct HibikiCommonNgramCache *ngram_cache, const char *c_filename) {
-    common_ngram_cache & cache = reinterpret_cast<common_ngram_cache&>(ngram_cache);
+void hibiki_common_ngram_cache_save(struct HibikiCommonNgramCache *ngram_cache, const char *c_filename) {
+    common_ngram_cache * cache = reinterpret_cast<common_ngram_cache *>(ngram_cache);
     std::string filename = std::string(c_filename);
-    common_ngram_cache_save(cache, filename);
+    common_ngram_cache_save(*cache, filename);
 }
 
 struct HibikiCommonNgramCache * hibiki_common_ngram_cache_load(const char *c_filename) {
@@ -149,6 +152,11 @@ struct HibikiCommonNgramCache * hibiki_common_ngram_cache_load(const char *c_fil
 
     struct HibikiCommonNgramCache * hibiki_cache = reinterpret_cast<struct HibikiCommonNgramCache *>(p);
     return hibiki_cache;
+}
+
+struct HibikiCommonNgramCache * hibiki_common_ngram_cache_new() {
+    common_ngram_cache *p = new common_ngram_cache;
+    return reinterpret_cast<struct HibikiCommonNgramCache *>(p);
 }
 
 void hibiki_common_ngram_cache_free(struct HibikiCommonNgramCache *nc) {
@@ -165,13 +173,6 @@ struct HibikiCommonChatTemplates * hibiki_common_chat_templates_from_model(const
     common_chat_templates t = common_chat_templates_from_model(model, chat_template_name);
     common_chat_templates *p = new common_chat_templates(std::move(t));
     return reinterpret_cast<struct HibikiCommonChatTemplates *>(p);
-}
-
-struct HibikiCommonNgramCache * hibiki_common_ngram_cache_new() {
-    common_ngram_cache cache;
-    common_ngram_cache *p = new common_ngram_cache(cache);
-
-    return reinterpret_cast<struct HibikiCommonNgramCache *>(p);
 }
 
 void hibiki_common_chat_templates_free(struct HibikiCommonChatTemplates *p) {

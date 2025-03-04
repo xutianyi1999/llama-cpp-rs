@@ -62,8 +62,8 @@ void hibiki_common_ngram_cache_update(
 void hibiki_common_ngram_cache_draft(
     const llama_token * inp_data,
     int inp_data_len,
-    const llama_token * draft,
-    int draft_len,
+    llama_token * out,
+    int * draft_len,
     int n_draft,
     int ngram_min,
     int ngram_max,
@@ -72,7 +72,7 @@ void hibiki_common_ngram_cache_draft(
     struct HibikiCommonNgramCache* nc_static
 );
 
-void hibiki_common_ngram_cache_save(const struct HibikiCommonNgramCache* ngram_cache, const char *filename);
+void hibiki_common_ngram_cache_save(struct HibikiCommonNgramCache* ngram_cache, const char *filename);
 
 struct HibikiCommonNgramCache* hibiki_common_ngram_cache_load(const char *filename);
 
