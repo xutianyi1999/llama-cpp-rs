@@ -423,14 +423,13 @@ fn main() {
         } else {
             println!("cargo:rustc-link-lib=static=cublas_static");
             println!("cargo:rustc-link-lib=static=cublasLt_static");
+            println!("cargo:rustc-link-lib=static=culibos");
         }
 
         // Need to link against libcuda.so unless GGML_CUDA_NO_VMM is defined.
         if !cfg!(feature = "cuda-no-vmm") {
             println!("cargo:rustc-link-lib=cuda");
         }
-
-        println!("cargo:rustc-link-lib=static=culibos");
     }
 
     // Link libraries
@@ -480,32 +479,6 @@ fn main() {
             }
         }
         _ => (),
-    }
-
-    // link cuda libs
-    // https://github.com/ggerganov/llama.cpp/blob/8d59d911711b8f1ba9ec57c4b192ccd2628af033/ggml/src/ggml-cuda/CMakeLists.txt#L80-L95
-    // https://github.com/ggerganov/llama.cpp/blob/8d59d911711b8f1ba9ec57c4b192ccd2628af033/Makefile#L609-L622
-    if cfg!(feature = "cuda") && !build_shared_libs {
-        let cuda_path = std::env::var("CUDA_PATH").expect("Please set CUDA_PATH env variable");
-        let cuda_path = PathBuf::from(cuda_path);
-        let libs = ["lib/x64", "lib64", "lib64/stubs"];
-
-        for lib in libs {
-            println!("cargo:rustc-link-search={}", cuda_path.join(lib).display());
-        }
-
-        println!("cargo:rustc-link-lib=dylib=cuda");
-
-        if cfg!(windows) {
-            println!("cargo:rustc-link-lib=static=cudart_static");
-            println!("cargo:rustc-link-lib=dylib=cublas");
-            println!("cargo:rustc-link-lib=dylib=cublasLt");
-        } else {
-            println!("cargo:rustc-link-lib=static=cudart_static");
-            println!("cargo:rustc-link-lib=static=cublas_static");
-            println!("cargo:rustc-link-lib=static=cublasLt_static");
-            println!("cargo:rustc-link-lib=static=culibos");
-        }
     }
 
     // copy DLLs to target
