@@ -1,8 +1,8 @@
 #include "llama_cpp_hibiki.h"
 #include "sampling.h"
 #include "speculative.h"
-#include "chat-template.hpp"
-#include "chat.hpp"
+#include "json.hpp"
+#include "chat.h"
 #include "ngram-cache.h"
 
 using json = nlohmann::ordered_json;
@@ -170,40 +170,48 @@ struct HibikiCommonChatTemplates * hibiki_common_chat_templates_from_model(const
     if (template_name != nullptr) {
         chat_template_name = std::string(template_name);
     }
-    common_chat_templates t = common_chat_templates_from_model(model, chat_template_name);
-    common_chat_templates *p = new common_chat_templates(std::move(t));
+    common_chat_templates_ptr t = common_chat_templates_init(model, chat_template_name);
+    common_chat_templates_ptr *p = new common_chat_templates_ptr(std::move(t));
     return reinterpret_cast<struct HibikiCommonChatTemplates *>(p);
 }
 
 void hibiki_common_chat_templates_free(struct HibikiCommonChatTemplates *p) {
-    struct common_chat_templates *t = reinterpret_cast<struct common_chat_templates*>(p);
+    common_chat_templates_ptr *t = reinterpret_cast<common_chat_templates_ptr*>(p);
     delete t;
 }
 
 struct HibikiCommonChatParams * hibiki_body_to_chat_params(const struct HibikiCommonChatTemplates *hibiki_tmpls, const char *json_str) {
-    const struct common_chat_templates *chat_templates = reinterpret_cast<const struct common_chat_templates*>(hibiki_tmpls);
-    const auto & tmpl =  chat_templates->template_tool_use
-         ? *chat_templates->template_tool_use
-         : *chat_templates->template_default;
+    const common_chat_templates_ptr *chat_templates_ptr = reinterpret_cast<const common_chat_templates_ptr*>(hibiki_tmpls);
+    common_chat_templates * chat_templates = chat_templates_ptr->get();
+
     json body = json::parse(json_str);
 
-    common_chat_inputs inputs;
-    inputs.messages = body.at("messages");
+    common_chat_templates_inputs inputs;
+    inputs.messages = common_chat_msgs_parse_oaicompat(body.at("messages"));
+
     auto tools = json_value(body, "tools", json());
-    inputs.tools = tools;
+    inputs.tools = common_chat_tools_parse_oaicompat(tools);
 
     auto tool_choice = json_value(body, "tool_choice", std::string("auto"));
-    inputs.tool_choice = tool_choice;
+    inputs.tool_choice = common_chat_tool_choice_parse_oaicompat(tool_choice);
+
+    auto json_schema = json_value(body, "json_schema", json());
+    inputs.json_schema = json_schema.is_null() ? "" : json_schema.dump();
+
+    auto grammar = json_value(body, "grammar", std::string());
+
+    if (!json_schema.is_null() && !grammar.empty()) {
+        printf("Cannot use both json_schema and grammar\n");
+        grammar.clear();
+    }
+    inputs.grammar = grammar;
+
+    inputs.add_generation_prompt = json_value(body, "add_generation_prompt", true);
+    inputs.use_jinja = true;
+
     inputs.parallel_tool_calls = json_value(body, "parallel_tool_calls", false);
 
-    if (inputs.parallel_tool_calls && !tmpl.original_caps().supports_parallel_tool_calls) {
-        inputs.parallel_tool_calls = false;
-    }
-
-    auto stream = json_value(body, "stream", false);
-    inputs.stream = stream;
-
-    common_chat_params chat_params = common_chat_params_init(tmpl, inputs);
+    common_chat_params chat_params = common_chat_templates_apply(chat_templates, inputs);
     common_chat_params *p = new common_chat_params(chat_params);
     return reinterpret_cast<struct HibikiCommonChatParams *>(p);
 }
@@ -215,13 +223,13 @@ void hibiki_common_chat_params_free(struct HibikiCommonChatParams *p) {
 
 size_t hibiki_get_common_chat_params_prompt_length(struct HibikiCommonChatParams *params) {
     const struct common_chat_params *chat_params = reinterpret_cast<const struct common_chat_params*>(params);
-    auto prompt = to_string(chat_params->prompt);
+    auto prompt = chat_params->prompt;
     return prompt.size();
 }
 
 void hibiki_get_common_chat_params_prompt(const struct HibikiCommonChatParams *params, char *out) {
     const struct common_chat_params *chat_params = reinterpret_cast<const struct common_chat_params*>(params);
-    auto prompt = to_string(chat_params->prompt);
+    auto prompt = chat_params->prompt;
     strcpy(out, prompt.c_str());
 }
 
@@ -241,11 +249,22 @@ nlohmann::ordered_json to_json(const common_chat_msg& msg) {
         });
     }
 
+    std::vector<nlohmann::ordered_json> content_parts_json;
+    for (const auto& part : msg.content_parts) {
+        content_parts_json.push_back({
+            {"type", part.type},
+            {"text", part.text}
+        });
+    }
+
     return nlohmann::ordered_json{
             {"role", msg.role},
             {"content", msg.content},
+            {"content_parts", content_parts_json},
             {"tool_calls", tool_calls_json},
-            {"tool_plan", msg.tool_plan}
+            {"reasoning_content", msg.reasoning_content},
+            {"tool_name", msg.tool_name},
+            {"tool_call_id", msg.tool_call_id}
     };
 }
 
