@@ -181,39 +181,44 @@ void hibiki_common_chat_templates_free(struct HibikiCommonChatTemplates *p) {
 }
 
 struct HibikiCommonChatParams * hibiki_body_to_chat_params(const struct HibikiCommonChatTemplates *hibiki_tmpls, const char *json_str) {
-    const common_chat_templates_ptr *chat_templates_ptr = reinterpret_cast<const common_chat_templates_ptr*>(hibiki_tmpls);
-    common_chat_templates * chat_templates = chat_templates_ptr->get();
+    try {
+        const common_chat_templates_ptr *chat_templates_ptr = reinterpret_cast<const common_chat_templates_ptr*>(hibiki_tmpls);
+        common_chat_templates * chat_templates = chat_templates_ptr->get();
 
-    json body = json::parse(json_str);
+        json body = json::parse(json_str);
 
-    common_chat_templates_inputs inputs;
-    inputs.messages = common_chat_msgs_parse_oaicompat(body.at("messages"));
+        common_chat_templates_inputs inputs;
+        inputs.messages = common_chat_msgs_parse_oaicompat(body.at("messages"));
 
-    auto tools = json_value(body, "tools", json());
-    inputs.tools = common_chat_tools_parse_oaicompat(tools);
+        auto tools = json_value(body, "tools", json());
+        inputs.tools = common_chat_tools_parse_oaicompat(tools);
 
-    auto tool_choice = json_value(body, "tool_choice", std::string("auto"));
-    inputs.tool_choice = common_chat_tool_choice_parse_oaicompat(tool_choice);
+        auto tool_choice = json_value(body, "tool_choice", std::string("auto"));
+        inputs.tool_choice = common_chat_tool_choice_parse_oaicompat(tool_choice);
 
-    auto json_schema = json_value(body, "json_schema", json());
-    inputs.json_schema = json_schema.is_null() ? "" : json_schema.dump();
+        auto json_schema = json_value(body, "json_schema", json());
+        inputs.json_schema = json_schema.is_null() ? "" : json_schema.dump();
 
-    auto grammar = json_value(body, "grammar", std::string());
+        auto grammar = json_value(body, "grammar", std::string());
 
-    if (!json_schema.is_null() && !grammar.empty()) {
-        printf("Cannot use both json_schema and grammar\n");
-        grammar.clear();
+        if (!json_schema.is_null() && !grammar.empty()) {
+            printf("Cannot use both json_schema and grammar\n");
+            grammar.clear();
+        }
+        inputs.grammar = grammar;
+
+        inputs.add_generation_prompt = json_value(body, "add_generation_prompt", true);
+        inputs.use_jinja = true;
+
+        inputs.parallel_tool_calls = json_value(body, "parallel_tool_calls", false);
+
+        common_chat_params chat_params = common_chat_templates_apply(chat_templates, inputs);
+        common_chat_params *p = new common_chat_params(chat_params);
+        return reinterpret_cast<struct HibikiCommonChatParams *>(p);
+    } catch (const std::exception& e) {
+        printf("%s\n", e.what());
+        return nullptr;
     }
-    inputs.grammar = grammar;
-
-    inputs.add_generation_prompt = json_value(body, "add_generation_prompt", true);
-    inputs.use_jinja = true;
-
-    inputs.parallel_tool_calls = json_value(body, "parallel_tool_calls", false);
-
-    common_chat_params chat_params = common_chat_templates_apply(chat_templates, inputs);
-    common_chat_params *p = new common_chat_params(chat_params);
-    return reinterpret_cast<struct HibikiCommonChatParams *>(p);
 }
 
 void hibiki_common_chat_params_free(struct HibikiCommonChatParams *p) {
